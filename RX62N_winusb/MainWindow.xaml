@@ -1,0 +1,50 @@
+﻿<Window x:Class="RX62N_winusb.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="350" Width="640" Background="Azure" Closing="Window_Closing">
+    <DockPanel Width="560" Height="300">
+        <Canvas Name="SevenSegs" DockPanel.Dock="Right" Height="300" Width="240" VerticalAlignment="Top" HorizontalAlignment="Right" Background="DarkGray">
+            <Button Content="Clear" Height="24" Name="Clear" Width="60" Canvas.Bottom="10" Canvas.Left="95" Background="White" BorderBrush="Gray" Click="ClearClick" />
+            <Button Canvas.Left="95"  Canvas.Top="54"  Height="14" Name="sevenSegment0" BorderBrush="Gray" Width="56" Background="Tomato" Click="SevenSegmentClick" />
+            <Button Canvas.Left="155" Canvas.Top="62"  Height="56" Name="sevenSegment1" BorderBrush="Gray" Width="14" Background="Gray" Click="SevenSegmentClick" />
+            <Button Canvas.Left="155" Canvas.Top="128" Height="48" Name="sevenSegment2" BorderBrush="Gray" Width="14" Click="SevenSegmentClick" />
+            <Button Canvas.Left="95"  Canvas.Top="180" Height="14" Name="sevenSegment3" BorderBrush="Gray" Width="56" Click="SevenSegmentClick" />
+            <Button Canvas.Left="77"  Canvas.Top="128" Height="56" Name="sevenSegment4" BorderBrush="Gray" Width="14" Background="Red" Click="SevenSegmentClick" />
+            <Button Canvas.Left="77"  Canvas.Top="62"  Height="56" Name="sevenSegment5" BorderBrush="Gray" Width="14" Background="OrangeRed" Click="SevenSegmentClick" />
+            <Button Canvas.Left="95"  Canvas.Top="116" Height="14" Name="sevenSegment6" BorderBrush="Gray" Width="56" Background="Orange" Click="SevenSegmentClick" />
+            <Button Canvas.Left="157" Canvas.Top="180" Height="15" Name="sevenSegment7" BorderBrush="Gray" Width="15" Click="SevenSegmentClick" />
+        </Canvas>
+        <GroupBox Header="LED" Height="70" Name="LEDgroupBox" Width="320" DockPanel.Dock="Top" HorizontalAlignment="Left" Background="LightCyan">
+            <StackPanel Orientation="Horizontal" Name="LED" Height="36">
+                <CheckBox Margin="5" Name="LEDcheck0"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck1"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck2"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck3"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck4"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck5"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck6"></CheckBox>
+                <CheckBox Margin="5" Name="LEDcheck7"></CheckBox>
+                <Button Margin="5" Content="SetLed" Height="20" Name="buttonSetLed" Width="100" Click="ButtonSetLedClick" />
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="DipSW" Height="70" Name="DipSWgroupBox" Width="320" DockPanel.Dock="Top" HorizontalAlignment="Left" Background="LightCyan">
+            <StackPanel Orientation="Horizontal" Name="DipSW" DockPanel.Dock="Bottom" Height="36">
+                <CheckBox Margin="5" Name="DIPcheck0"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck1"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck2"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck3"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck4"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck5"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck6"></CheckBox>
+                <CheckBox Margin="5" Name="DIPcheck7"></CheckBox>
+                <Button Margin="5" Content="GetDip SW" Height="20" Name="buttonGetDipSW" Width="100" Click="ButtonGetDipSwClick" />
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="Alert" Height="100" Name="AlertgroupBox" Width="320" DockPanel.Dock="Top" HorizontalAlignment="Left" Background="SeaShell">
+            <StackPanel Orientation="Horizontal" Name="Alert" DockPanel.Dock="Bottom" Height="36">
+                <TextBlock Height="30" Name="textBlock" Text="No messages" Width="180" HorizontalAlignment="Left"/>
+                <Button Content="OK" Height="26" Name="buttonOK" Width="116" Visibility="Hidden" Click="ButtonOKClick" />
+            </StackPanel>
+        </GroupBox>
+    </DockPanel>
+</Window>
