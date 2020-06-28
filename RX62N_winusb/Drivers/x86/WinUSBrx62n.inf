@@ -1,0 +1,87 @@
+;
+; WinUSBTest.inf - Install the WinUSB.sys for USB Test
+;
+
+[Version]
+Signature="$Windows NT$"
+Class=Sample
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171}
+Provider=%DEVDRV%
+DriverVer=10/28/2010,6.1.7600.16385
+CatalogFile=WinUSBrx62n.cat
+
+; ========== Manufacturer/Models sections ===========
+
+[Manufacturer]
+%DEVDRV%=DevDrv,NTx86,NTamd64
+
+[DevDrv.NTx86]
+%DeviceName%=USB_Install, USB\VID_0B7E&PID_8000
+
+[DevDrv.NTamd64]
+%DeviceName%=USB_Install, USB\VID_0B7E&PID_8000
+
+[ClassInstall32]
+AddReg=SampleClass_RegistryAdd
+
+[SampleClass_RegistryAdd]
+HKR,,,,%ClassName%
+HKR,,Icon,,"-10"
+
+[SourceDisksFiles]
+WdfCoInstaller01009.dll=1
+WinUsbCoinstaller2.dll=1
+
+[SourceDisksNames]
+1 = %MediaDescription%
+
+; =================== UMDF DevDrv Device ==================================
+
+[USB_Install.NT]
+Include=WINUSB.INF                      ; Import sections from WINUSB.INF
+Needs=WINUSB.NT                         ; Run the CopyFiles & AddReg directives for WinUsb.INF
+
+[USB_Install.NT.hw]
+AddReg=Device_AddReg
+
+[USB_Install.NT.Services]
+AddService=WinUsb,0x00000002,WinUsb_ServiceInstall  ; this service is installed because its a filter.
+
+[USB_Install.NT.Wdf]
+KmdfService=WINUSB, WinUsb_Install
+
+[USB_Install.NT.CoInstallers]
+AddReg=CoInstallers_AddReg
+CopyFiles=CoInstallers_CopyFiles
+
+[WinUsb_Install]
+KmdfLibraryVersion = 1.9
+
+[Device_AddReg]
+HKR,,DeviceInterfaceGUIDs,0x10000,"{94A23B10-6D99-4903-AD6E-4042D723E4AB}"
+
+[WinUsb_ServiceInstall]
+DisplayName     = %WinUsb_SvcDesc%
+ServiceType     = 1
+StartType       = 3
+ErrorControl    = 1
+ServiceBinary   = %12%\WinUSB.sys
+
+[CoInstallers_AddReg]
+HKR,,CoInstallers32,0x00010000,"WinUsbCoinstaller2.dll","WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[CoInstallers_CopyFiles]
+WdfCoInstaller01009.dll
+WinUsbCoinstaller2.dll
+
+[DestinationDirs]
+CoInstallers_CopyFiles=11
+
+; =================== Generic ==================================
+
+[Strings]
+DEVDRV="Device Drivers"
+MediaDescription="DevDrv RX62N WinUSB Driver Installation Media"
+ClassName="Sample Device"
+DeviceName="WinUSB RX62N Test Device" 
+WinUsb_SvcDesc="WinUSB RX62N Test Driver"
