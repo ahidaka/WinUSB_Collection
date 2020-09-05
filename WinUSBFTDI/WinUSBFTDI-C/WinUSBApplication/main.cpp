@@ -2,15 +2,6 @@
 #include <stdio.h>
 #include <process.h> //system()
 
-#if 0
-typedef struct _WINUSB_SETUP_PACKET {
-    UCHAR   RequestType;
-    UCHAR   Request;
-    USHORT  Value;
-    USHORT  Index;
-    USHORT  Length;
-} WINUSB_SETUP_PACKET, * PWINUSB_SETUP_PACKET;
-#endif
 
 extern VOID UsbPrintData(PCHAR Name, PUCHAR Buffer, INT Size);
 
@@ -19,13 +10,6 @@ _tmain(
     LONG     Argc,
     LPTSTR * Argv
     )
-/*++
-
-Routine description:
-
-    Sample program that communicates with a USB device using WinUSB
-
---*/
 {
     DEVICE_DATA           deviceData;
     HRESULT               hr;

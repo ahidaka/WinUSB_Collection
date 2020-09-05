@@ -1,4 +1,4 @@
-#include "UsbDriver.h"
+#include "UsbDevice.h"
 #include "UsbBuffer.h"
 #include <cfgmgr32.h>
 
@@ -102,7 +102,7 @@ BOOL QueryDeviceEndpoints(
     USB_INTERFACE_DESCRIPTOR InterfaceDescriptor;
     WINUSB_PIPE_INFORMATION  Pipe;
 
-    if (DeviceData->DeviceHandle == INVALID_HANDLE_VALUE)
+    if (DeviceData->WinusbHandle == INVALID_HANDLE_VALUE)
     {
         return FALSE;
     }
@@ -110,12 +110,12 @@ BOOL QueryDeviceEndpoints(
     ZeroMemory(&InterfaceDescriptor, sizeof(USB_INTERFACE_DESCRIPTOR));
     ZeroMemory(&Pipe, sizeof(WINUSB_PIPE_INFORMATION));
 
-    result = WinUsb_QueryInterfaceSettings(DeviceData->DeviceHandle, 0, &InterfaceDescriptor);
+    result = WinUsb_QueryInterfaceSettings(DeviceData->WinusbHandle, 0, &InterfaceDescriptor);
     if (result)
     {
         for (index = 0; index < InterfaceDescriptor.bNumEndpoints; index++)
         {
-            result = WinUsb_QueryPipe(DeviceData->DeviceHandle, (UCHAR)0, (UCHAR)index, &Pipe);
+            result = WinUsb_QueryPipe(DeviceData->WinusbHandle, (UCHAR)0, (UCHAR)index, &Pipe);
             if (result)
             {
                 switch (Pipe.PipeType)
@@ -267,7 +267,7 @@ UsbDeviceControlTransfer(
     ULONG cbSent = 0;
     WINUSB_SETUP_PACKET SetupPacket;
 
-    if (DeviceData->DeviceHandle == INVALID_HANDLE_VALUE)
+    if (DeviceData->WinusbHandle == INVALID_HANDLE_VALUE)
     {
         return FALSE;
     }
@@ -281,7 +281,7 @@ UsbDeviceControlTransfer(
     SetupPacket.Index = Index;
     SetupPacket.Length = 0;
 
-    result = WinUsb_ControlTransfer(DeviceData->DeviceHandle,
+    result = WinUsb_ControlTransfer(DeviceData->WinusbHandle,
         SetupPacket, NULL, 0, &cbSent, 0);
     if (result)
     {
@@ -319,7 +319,7 @@ UsbDeviceInitialize(
     BOOL result;
     INT divisor;
 
-    if (DeviceData->DeviceHandle == INVALID_HANDLE_VALUE)
+    if (DeviceData->WinusbHandle == INVALID_HANDLE_VALUE)
     {
         return FALSE;
     }
@@ -339,7 +339,7 @@ UsbDeviceInitialize(
     UsbDeviceControlTransfer(DeviceData, 0x40, 0, 2, 0);
     UsbDeviceControlTransfer(DeviceData, 0x40, 2, 0x0000, 0);
     UsbDeviceControlTransfer(DeviceData, 0x40, 3, (USHORT)divisor, 0);
-    // DataBit 8, Parity none, StopBit 1, txonoff off
+    // DataBit 8, Parity none, StopBit 1
     UsbDeviceControlTransfer(DeviceData, 0x40, 4, 0x0008, 0);
     
     return result;
@@ -366,7 +366,7 @@ UsbDeviceWrite(
     while (cbSent < Length)
     {
         result = WinUsb_WritePipe(
-            DeviceData->DeviceHandle,
+            DeviceData->WinusbHandle,
             DeviceData->WritePipe,
             &Buffer[cbSent],
             cbSize,
@@ -404,7 +404,7 @@ UsbDeviceRead(
     ULONG cbRead;
     UCHAR szBuffer[packetSize];
 
-    if (DeviceData->DeviceHandle == INVALID_HANDLE_VALUE)
+    if (DeviceData->WinusbHandle == INVALID_HANDLE_VALUE)
     {
         return FALSE;
     }
@@ -428,7 +428,7 @@ UsbDeviceRead(
         //
         cbRead = 0;
         result = WinUsb_ReadPipe(
-            DeviceData->DeviceHandle,
+            DeviceData->WinusbHandle,
             DeviceData->ReadPipe,
             szBuffer,
             packetSize,
@@ -476,11 +476,13 @@ UsbDeviceRead(
 
             }
         }
-        //else
-        //{
+#if 1 // Non block read, 
+        else
+        {
         //    printf("InputFromBuffer error, i=%d\n", cbRead);
-        //    break;
-        //}
+            break;
+        }
+#endif
     }
 
     //for (i = 0; i < dataLength; i++)
