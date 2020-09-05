@@ -38,13 +38,13 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="buffer.cpp" />
-    <ClCompile Include="device.cpp" />
+    <ClCompile Include="WinUsbBuffer.cpp" />
+    <ClCompile Include="WinUsbDriver.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="buffer.h" />
-    <ClInclude Include="device.h" />
+    <ClInclude Include="UsbBuffer.h" />
+    <ClInclude Include="UsbDriver.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

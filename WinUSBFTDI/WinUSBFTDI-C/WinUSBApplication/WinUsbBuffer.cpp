@@ -1,8 +1,8 @@
-#include "buffer.h"
+#include "UsbBuffer.h"
 
 static PUSB_BUFFER UsbRxBuffer;
 
-BOOL BufferInitialize(VOID)
+BOOL UsbBufferInitialize(VOID)
 {
     PUSB_BUFFER pu;
 
@@ -19,34 +19,34 @@ BOOL BufferInitialize(VOID)
 }
 
 
-BOOL BufferOutputTo(UCHAR Data)
+BOOL UsbBufferOutputTo(UCHAR Data)
 {
     PUSB_BUFFER pu = UsbRxBuffer;
 
     if (pu->RxSystem == pu->RxUser)
     {
-        if (pu->RxStatus == RX_OVER_FLOW)
+        if (pu->RxStatus == USB_RX_OVERFLOW)
         {
             return FALSE;
         }
     }
     pu->RxBuffer[pu->RxSystem] = Data;
     pu->RxSystem++;
-    pu->RxSystem &= (RX_BUFSIZE - 1); /* rotete to top, if overlapped */
+    pu->RxSystem &= (USB_RX_BUFSIZE - 1); /* rotete to top, if overlapped */
 
     if (pu->RxSystem == pu->RxUser)
     {
-        pu->RxStatus = RX_OVER_FLOW;
+        pu->RxStatus = USB_RX_OVERFLOW;
     }
     else
     {
-        pu->RxStatus = RX_RECEIVED;
+        pu->RxStatus = USB_RX_RECEIVED;
     }
     pu->RxCount++;
     return TRUE;
 }
 
-BOOL BufferInputFrom(PUCHAR pData)
+BOOL UsbBufferInputFrom(PUCHAR pData)
 {
     PUSB_BUFFER pu = UsbRxBuffer;
     UCHAR data;
@@ -56,10 +56,10 @@ BOOL BufferInputFrom(PUCHAR pData)
     {
         data = pu->RxBuffer[pu->RxUser];
         pu->RxUser++;
-        pu->RxUser &= (RX_BUFSIZE - 1); /* rotete to top, if overlapped */
+        pu->RxUser &= (USB_RX_BUFSIZE - 1); /* rotete to top, if overlapped */
         if (--pu->RxCount == 0)
         {
-            pu->RxStatus = RX_EMPTY;
+            pu->RxStatus = USB_RX_EMPTY;
         }
         *pData = data;
         status = TRUE;
@@ -72,7 +72,7 @@ BOOL BufferInputFrom(PUCHAR pData)
 }
 
 
-VOID BufferPrint(VOID)
+VOID UsbBufferPrint(VOID)
 {
     PUSB_BUFFER pu = UsbRxBuffer;
     ULONG i;
@@ -86,13 +86,13 @@ VOID BufferPrint(VOID)
     //       0  1  2  3  4  5  6  7
     printf("RxStatus=%d RxCount=%2d", pu->RxStatus, pu->RxCount);
 
-    for (i = 8; i < RX_BUFSIZE; i++)
+    for (i = 7; i < USB_RX_BUFSIZE; i++)
     {
         printf("%2d ", i);
     }
     printf("\n");
 
-    for (i = 0; i < RX_BUFSIZE; i++)
+    for (i = 0; i < USB_RX_BUFSIZE; i++)
     {
         if (i == pu->RxSystem && i == pu->RxUser)
         {
@@ -113,7 +113,7 @@ VOID BufferPrint(VOID)
     }
     printf("\n");
 
-    for (i = 0; i < RX_BUFSIZE; i++)
+    for (i = 0; i < USB_RX_BUFSIZE; i++)
     {
         printf("%02X ", pu->RxBuffer[i]);
     }

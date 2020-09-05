@@ -4,4 +4,5 @@
 #include <winusb.h>
 #include <usb.h>
 
-#include "device.h"
+#include "UsbDriver.h"
+#include "UsbBuffer.h"
