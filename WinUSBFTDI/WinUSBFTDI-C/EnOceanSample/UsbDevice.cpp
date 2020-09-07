@@ -409,6 +409,7 @@ UsbDeviceRead(
         return FALSE;
     }
 
+    printf("Read Length=%lu\n", Length); ////////
     UsbBufferPrint();
 
     // Read old buffer data, if exists
@@ -421,6 +422,7 @@ UsbDeviceRead(
         printf("1:Buffer[%d]=%02X\n", dataLength, Buffer[dataLength]);
     }
 
+    printf("End for dataLength=%lu\n", dataLength); ////////
     while (dataLength < Length)
     {
         //
@@ -503,6 +505,8 @@ UsbDeviceRead(
     }
 
     UsbBufferPrint();
+
+    printf("Return Length=%lu\n", dataLength); ////////
 
     return result;
 }

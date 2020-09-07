@@ -26,6 +26,7 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
     UCHAR crc8h;
     UCHAR crc8d;
 
+    printf("Enter MainLoop\n");
     do
     {
         dataLength = optionalLength = 0;
@@ -47,38 +48,30 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
             continue;
         }
 
-        result = UsbDeviceRead(DeviceData, buffer, 4, &length);
+        result = UsbDeviceRead(DeviceData, buffer, 5, &length);
         if (!result)
         {
             printf("ERROR: !result\n");
             return FALSE;
         }
-        else if (length != 4)
+        else if (length != 5)
         {
             Sleep(1);
+            printf("TRY: length != 5\n"); ////
             continue;
         }
 
         dataLength = buffer[0] << 8 | buffer[1];
         optionalLength = buffer[2];
         packetType = buffer[3];
+        crc8h = buffer[4];
 
-        UsbDeviceRead(DeviceData, buffer, 1, &length);
-        if (!result)
-        {
-            printf("ERROR: !result\n");
-            return FALSE;
-        }
-        else if (length != 1)
-        {
-            Sleep(1);
-            continue;
-        }
-
-        crc8h = buffer[0];
         gotHeader = crc8h == Crc8(buffer, 4);
+        printf("CRC8H: crc8h=%02X Calc=%02X\n", crc8h, Crc8(buffer, 4)); ////
     }
     while(!gotHeader);
+
+    printf("Got Header!\n"); ////
 
     readLength = dataLength + optionalLength + 1;
     if (readLength > BUFFER_SIZE)
@@ -99,12 +92,16 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
         return FALSE;
     }
 
-    crc8d = Crc8(buffer, readLength);
-    if (crc8d != buffer[readLength - 1])
+    crc8d = buffer[readLength - 1];
+    if (crc8d != Crc8(buffer, readLength - 1))
     {
         printf("CRC8D error!\n");
     }
-
+    else
+    {
+        printf("CRC8D OK!\n");
+    }
+    printf("CRC8D: crc8d=%02X Calc=%02X\n", crc8d, Crc8(buffer, readLength - 1)); ////
 
     return TRUE;
 }
