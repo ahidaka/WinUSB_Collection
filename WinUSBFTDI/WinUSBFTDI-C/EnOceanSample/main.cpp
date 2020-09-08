@@ -1,15 +1,137 @@
 #include "pch.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+
+
+
+typedef struct _eep_data
+{
+    UCHAR ROrg;
+    UCHAR Func;
+    UCHAR Type;
+    USHORT ManID;
+}
+EEP_DATA, *PEEP_DATA;
 
 
 UCHAR Crc8(PUCHAR Data, INT Count);
+UCHAR Crc8Ex(PUCHAR Data, INT Offset, INT Count);
 
-BOOL PreparationFilter(PDEVICE_DATA DeviceData)
+//
+// Globals
+//
+BOOL UseFilter;
+ULONG SwitchID;
+ULONG TempID;
+
+//
+//
+//
+VOID BufferFilter(PUCHAR Buffer, ULONG Id)
 {
-    UNREFERENCED_PARAMETER(DeviceData);
+    Buffer[0] = 0x55; // Sync Byte
+    Buffer[1] = 0; // Data Length[0]
+    Buffer[2] = 7; // Data Length[1]
+    Buffer[3] = 0; // Optional Length
+    Buffer[4] = 5; // Packet Type = CO (5)
+    Buffer[5] = Crc8Ex(Buffer, 1, 4); // CRC8H
+    Buffer[6] = 11; // Command Code = CO_WR_FILTER_ADD (11)
+    Buffer[7] = 0;  // FilterType = Device ID (0)
+    Buffer[8] = (UCHAR)((Id >> 24) & 0xFF); // ID[0]
+    Buffer[9] = (UCHAR)((Id >> 16) & 0xFF); // ID[1]
+    Buffer[10] = (UCHAR)((Id >> 8) & 0xFF); // ID[2]
+    Buffer[11] = (UCHAR)(Id & 0xFF); // ID[3]
+    Buffer[12] = 0x80; // Filter Kind = apply (0x80)
+    Buffer[13] = Crc8Ex(Buffer, 6, 7); // CRC8D
+}
+
+//
+//
+//UsbDeviceWrite(
+//    _In_        PDEVICE_DATA DeviceData,
+//    _In_        UCHAR* Buffer,
+//    _In_        ULONG Length,
+//    _Out_opt_   ULONG* pcbWritten
+//);
+
+BOOL PreparationFilter(
+    _In_ PDEVICE_DATA DeviceData,
+    _In_ BOOL Enable
+)
+{
+    BOOL clearFilter = true;
+    BOOL writeFilter = Enable;
+    ULONG wroteLength = 0;
+    UCHAR buffer[16];
+
+#define CHECK_RESULT(len) \
+    if (wroteLength != (len)) \
+    { \
+        printf("FILTER: length error=%d(%d)", wroteLength, len); \
+        return FALSE; \
+    }
+
+    if (clearFilter)
+    {
+        if (true)
+        {
+            //printf("FILTER: Clear all Filters\n");
+            buffer[0] = 0x55; // Sync Byte
+            buffer[1] = 0; // Data Length[0]
+            buffer[2] = 1; // Data Length[1]
+            buffer[3] = 0; // Optional Length
+            buffer[4] = 5; // Packet Type = CO (5)
+            buffer[5] = Crc8Ex(buffer, 1, 4); // CRC8H
+            buffer[6] = 13; // Command Code = CO_WR_FILTER_DEL (13)
+            buffer[7] = Crc8Ex(buffer, 6, 1); // CRC8D
+            UsbDeviceWrite(DeviceData, buffer, 8, &wroteLength);
+            CHECK_RESULT(8);
+            Sleep(100);
+            //GetResponse();
+        }
+        if (writeFilter && SwitchID != 0)
+        {
+            printf("FILTER: SwitchID Add Filter=%08X\n", SwitchID);
+            BufferFilter(buffer, SwitchID);
+            UsbDeviceWrite(DeviceData, buffer, 14, &wroteLength);
+            CHECK_RESULT(14);
+            Sleep(100);
+        }
+        if (writeFilter && TempID != 0)
+        {
+            printf("FILTER: TempID Add Filter=%08X\n", TempID);
+            BufferFilter(buffer, TempID);
+            UsbDeviceWrite(DeviceData, buffer, 14, &wroteLength);
+            CHECK_RESULT(14);
+            Sleep(100);
+            //GetResponse();
+        }
+    }
+    if (writeFilter)
+    {
+        printf("Enable Filters\n");
+
+        buffer[0] = 0x55; // Sync Byte
+        buffer[1] = 0; // Data Length[0]
+        buffer[2] = 3; // Data Length[1]
+        buffer[3] = 0; // Optional Length
+        buffer[4] = 5; // Packet Type = CO (5)
+        buffer[5] = Crc8Ex(buffer, 1, 4); // CRC8H
+        buffer[6] = 14; // Command Code = CO_WR_FILTER_ENABLE (14)
+        buffer[7] = 1;  // Filter Enable = ON (1)
+        buffer[8] = 0;  // Filter Operator = OR (0)
+        //buffer[8] = 1;  // Filter Operator = AND (1)
+        buffer[9] = Crc8Ex(buffer, 6, 3); // CRC8D
+
+        UsbDeviceWrite(DeviceData, buffer, 10, &wroteLength);
+        CHECK_RESULT(10);
+        Sleep(100);
+        //GetResponse();
+    }
 
     return TRUE;
+#undef CHECK_RESULT
 }
 
 BOOL MainLoop(PDEVICE_DATA DeviceData)
@@ -26,7 +148,7 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
     UCHAR crc8h;
     UCHAR crc8d;
 
-    printf("Enter MainLoop\n");
+    // printf("Enter MainLoop\n");
     do
     {
         dataLength = optionalLength = 0;
@@ -67,11 +189,11 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
         crc8h = buffer[4];
 
         gotHeader = crc8h == Crc8(buffer, 4);
-        printf("CRC8H: crc8h=%02X Calc=%02X\n", crc8h, Crc8(buffer, 4)); ////
+        // printf("CRC8H: crc8h=%02X Calc=%02X\n", crc8h, Crc8(buffer, 4)); ////
     }
     while(!gotHeader);
 
-    printf("Got Header!\n"); ////
+    // printf("Got Header!\n"); ////
 
     readLength = dataLength + optionalLength + 1;
     if (readLength > BUFFER_SIZE)
@@ -99,7 +221,7 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
     }
     else
     {
-        printf("CRC8D OK!\n");
+        // printf("CRC8D OK!\n");
     }
     printf("CRC8D: crc8d=%02X Calc=%02X\n", crc8d, Crc8(buffer, readLength - 1)); ////
 
@@ -142,7 +264,7 @@ static UCHAR crc8Table[] =
         0xe6, 0xe1, 0xe8, 0xef, 0xfa, 0xfd, 0xf4, 0xf3
     };
 
-UCHAR Crc8(PUCHAR Data, INT Offset, INT Count)
+UCHAR Crc8Ex(PUCHAR Data, INT Offset, INT Count)
 {
     UCHAR crc = 0;
     Count += Offset;
@@ -153,9 +275,17 @@ UCHAR Crc8(PUCHAR Data, INT Offset, INT Count)
 
 UCHAR Crc8(PUCHAR Data, INT Count)
 {
-    return Crc8(Data, 0, Count);
+    return Crc8Ex(Data, 0, Count);
 }
 
+
+VOID Usage(_In_ LPTSTR MyName)
+{
+    printf("Usage: %ws [-f] [Switch-ID] [TempSensor-ID]\n\n", MyName);
+    printf("  -f            Use ID Filters for switch and sensors.\n");
+    printf(" Switch-ID      EnOcean Locker Switch ID. '0' is not existing.\n");
+    printf(" TempSensor-ID  EnOcean Temperature sensor ID. '0' is not existing.\n\n");
+}
 
 LONG __cdecl
 _tmain(
@@ -167,9 +297,34 @@ _tmain(
     HRESULT               hr;
     BOOL                  result;
     BOOL                  noDevice;
+    INT argIndex = 0;
 
-    UNREFERENCED_PARAMETER(Argc);
-    UNREFERENCED_PARAMETER(Argv);
+    if (Argc > 1)
+    {
+        if (Argv[1][0] == '-')
+        {
+            if (Argv[1][1] == 'f')
+            {
+                UseFilter = TRUE;
+                argIndex++;
+            }
+            else
+            {
+                Usage(Argv[0]);
+                return 0;
+            }
+        }
+    }
+    if (Argc > (1 + argIndex))
+    {
+        SwitchID = wcstoul(Argv[1 + argIndex], NULL, 16);
+        printf("SwitchID=%08X(%ws)\n", SwitchID, Argv[1 + argIndex]);
+    }
+    if (Argc > (2 + argIndex))
+    {
+        TempID = wcstoul(Argv[2 + argIndex], NULL, 16);
+        printf("TempID=%08X(%ws)\n", TempID, Argv[2 + argIndex]);
+    }
 
     //
     // Find a device connected to the system that has WinUSB installed using our
@@ -197,7 +352,7 @@ _tmain(
         return 0;
     }
 
-    if (!PreparationFilter(&deviceData))
+    if (!PreparationFilter(&deviceData, UseFilter))
     {
         printf("Error\n");
         return 0;

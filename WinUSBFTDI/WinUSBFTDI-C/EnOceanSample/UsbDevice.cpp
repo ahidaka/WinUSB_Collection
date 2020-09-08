@@ -350,40 +350,54 @@ UsbDeviceWrite(
     _In_        PDEVICE_DATA DeviceData,
     _In_        UCHAR* Buffer,
     _In_        ULONG Length,
-    _Out_opt_   ULONG* pcbWritten
+    _Out_opt_   ULONG* writtenLength
 )
 {
     BOOL result = TRUE;
-    ULONG cbSent = 0;
-    const size_t cbSize = 0x40;
-    UCHAR szBuffer[cbSize];
+    const size_t packetSize = 0x40;
+    ULONG sentLength = 0;
+    ULONG packetLength;
+    ULONG sentPacket;
 
     if (DeviceData->DeviceHandle == INVALID_HANDLE_VALUE)
     {
         return FALSE;
     }
 
-    while (cbSent < Length)
+    while (sentLength < Length)
     {
+        packetLength = Length - sentLength;
+        if (packetLength > packetSize)
+        {
+            packetLength = packetSize;
+        }
+        sentPacket = 0;
         result = WinUsb_WritePipe(
             DeviceData->WinusbHandle,
             DeviceData->WritePipe,
-            &Buffer[cbSent],
-            cbSize,
-            &cbSent,
+            &Buffer[sentLength],
+            packetSize,
+            &sentPacket,
             0
         );
         if (!result)
         {
-            goto done;
+            return result;
         }
-        Length -= cbSent;
+        if (sentPacket > packetLength)
+        {
+            sentPacket = packetLength;
+        }
+        Length -= sentPacket;
+        sentLength += sentPacket;
     }
 
-    printf("WriteDevice: %s \nActual data transferred: %d.\n", szBuffer, cbSent);
-    *pcbWritten = cbSent;
+    printf("UsbDeviceWrite: Actual data transferred: %d\n", sentLength);
+    if (writtenLength != NULL)
+    {
+        *writtenLength = sentLength;
+    }
 
-done:
     return result;
 }
 
@@ -409,7 +423,7 @@ UsbDeviceRead(
         return FALSE;
     }
 
-    printf("Read Length=%lu\n", Length); ////////
+    //printf("Read Length=%lu\n", Length); ////////
     UsbBufferPrint();
 
     // Read old buffer data, if exists
@@ -422,7 +436,7 @@ UsbDeviceRead(
         printf("1:Buffer[%d]=%02X\n", dataLength, Buffer[dataLength]);
     }
 
-    printf("End for dataLength=%lu\n", dataLength); ////////
+    //printf("End for dataLength=%lu\n", dataLength); ////////
     while (dataLength < Length)
     {
         //
@@ -506,7 +520,7 @@ UsbDeviceRead(
 
     UsbBufferPrint();
 
-    printf("Return Length=%lu\n", dataLength); ////////
+    //printf("Return Length=%lu\n", dataLength); ////////
 
     return result;
 }
