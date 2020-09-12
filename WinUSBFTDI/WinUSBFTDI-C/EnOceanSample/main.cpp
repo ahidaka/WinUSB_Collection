@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
 typedef struct _eep_data
 {
     UCHAR ROrg;
@@ -14,6 +12,19 @@ typedef struct _eep_data
 }
 EEP_DATA, *PEEP_DATA;
 
+
+enum PacketType
+{
+    Radio = 0x01,
+    Response = 0x02,
+    RadioSubTel = 0x03,
+    Event = 0x04,
+    CommonCommand = 0x05,
+    SmartAckCommand = 0x06,
+    RmoteManCommand = 0x07,
+    RadioMessage = 0x09,
+    RadioAdvanced = 0x0A
+};
 
 UCHAR Crc8(PUCHAR Data, INT Count);
 UCHAR Crc8Ex(PUCHAR Data, INT Offset, INT Count);
@@ -144,9 +155,15 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
     USHORT dataLength;
     USHORT optionalLength;
     ULONG readLength;
-    UCHAR packetType;
+    UCHAR packetType = 0;
     UCHAR crc8h;
     UCHAR crc8d;
+    UCHAR rOrg;
+    UCHAR dataOffset;
+    UCHAR dataSize;
+    UCHAR id[4];
+    UCHAR data[4];
+    UCHAR nu;
 
     // printf("Enter MainLoop\n");
     do
@@ -223,7 +240,61 @@ BOOL MainLoop(PDEVICE_DATA DeviceData)
     {
         // printf("CRC8D OK!\n");
     }
-    printf("CRC8D: crc8d=%02X Calc=%02X\n", crc8d, Crc8(buffer, readLength - 1)); ////
+    //printf("CRC8D: crc8d=%02X Calc=%02X\n", crc8d, Crc8(buffer, readLength - 1));
+
+    if (packetType == RadioAdvanced)
+    {
+        rOrg = buffer[0];
+        switch (rOrg)
+        {
+        case 0x62: //Teach-In
+            dataOffset = 2;
+            dataSize = 0;
+            break;
+
+        case 0x20: //RPS
+            dataOffset = 0;
+            dataSize = 1;
+            break;
+
+        case 0x22: //4BS
+            dataOffset = 0;
+            dataSize = 4;
+            break;
+
+        default: // not used
+            dataOffset = 0;
+            dataSize = 0;
+            break;
+        }
+
+        id[3] = buffer[1 + dataOffset];
+        id[2] = buffer[2 + dataOffset];
+        id[1] = buffer[3 + dataOffset];
+        id[0] = buffer[4 + dataOffset];
+
+        switch (rOrg)
+        {
+        case 0x62: //Teach-In
+        case 0x22: //4BS
+            data[0] = buffer[5 + dataOffset];
+            data[1] = buffer[6 + dataOffset];
+            data[2] = buffer[7 + dataOffset];
+            data[3] = buffer[8 + dataOffset];
+            break;
+
+        case 0x20: //RPS
+            nu = (buffer[5 + dataOffset] >> 7) & 0x01;
+            data[0] = buffer[5 + dataOffset] & 0x0F;
+            data[1] = 0; // not used
+            data[2] = 0; // not used
+            data[3] = 0; // not used
+            break;
+
+        default: // not used
+            break;
+        }
+    }
 
     return TRUE;
 }
